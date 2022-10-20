@@ -13,41 +13,52 @@ import {
   Thead,
   Tr,
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import TransactionRow from "./TransactionRow";
+import { useTable, usePagination } from "react-table";
+import TableTemplate from "./TableTemplate";
 
 const TransactionTable = ({ transactions }) => {
+  const columns = React.useMemo(
+    () => [
+      {
+        Header: "Block",
+        accessor: "blockNumber",
+      },
+      {
+        Header: "Time",
+        accessor: "timeStamp",
+        Cell: ({ cell: { value } }) => {
+          const date = new Date(value * 1000).toLocaleString();
+          return <>{date}</>;
+        },
+      },
+      {
+        Header: "From",
+        accessor: "from",
+      },
+      {
+        Header: "To",
+        accessor: "to",
+      },
+      {
+        Header: "Value",
+        accessor: "value",
+        Cell: ({ cell: { value } }) => {
+          const ethValue = Number(value) / 1e18;
+          return <>{ethValue}</>;
+        },
+      },
+    ],
+    []
+  );
 
   return (
-    <>
-      <TableContainer>
-        <Table variant="simple">
-          <TableCaption>Transaction History</TableCaption>
-          <Thead>
-            <Tr>
-              <Th>Block</Th>
-              <Th>Time</Th>
-              <Th>From</Th>
-              <Th>To</Th>
-              <Th isNumeric>Value</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {transactions &&
-            transactions.map((tx) => (
-                <TransactionRow transaction={tx} />
-            ))}
-          </Tbody>
-          <Tfoot>
-            <Tr>
-              <Th>To convert</Th>
-              <Th>into</Th>
-              <Th isNumeric>multiply by</Th>
-            </Tr>
-          </Tfoot>
-        </Table>
-      </TableContainer>
-    </>
+    <TableTemplate
+      columns={columns}
+      data={transactions}
+      title="External Transaction History"
+    />
   );
 };
 

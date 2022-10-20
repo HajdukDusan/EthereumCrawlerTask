@@ -14,7 +14,7 @@ const TransactionRow = ({ transaction }) => {
       <Td>{getDate(transaction.timestamp)}</Td>
       <Td>{transaction.from}</Td>
       <Td>{transaction.to}</Td>
-      <Td isNumeric>{Math.round(Number(transaction.value.hex)) / 1e18}</Td>
+      <Td isNumeric>{Number(transaction.value.hex) / 1e18}</Td>
     </Tr>
   );
 };

@@ -32,10 +32,18 @@ const TransactionHistory = () => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const getTransactions = async (address, fromBlock, toBlock) => {
+  const getTransactions = async (
+    address,
+    fromBlock,
+    toBlock,
+    pageIndex,
+    pageSize
+  ) => {
     setLoading(true);
 
-    setTransactions(await GetHistory(address, fromBlock, toBlock));
+    setTransactions(
+      await GetHistory(address, fromBlock, toBlock, pageIndex, pageSize)
+    );
 
     setLoading(false);
   };
@@ -46,8 +54,7 @@ const TransactionHistory = () => {
 
   return (
     <Box maxW="8xl" mx={"auto"} pt={5} px={{ base: 2, sm: 12, md: 17 }}>
-
-      <Search SearchTransactions={getTransactions}/>
+      <Search SearchTransactions={getTransactions} />
 
       {loading ? (
         <Flex
@@ -59,7 +66,17 @@ const TransactionHistory = () => {
           <Spinner size={"xl"} />
         </Flex>
       ) : (
-        <TransactionTable transactions={transactions} />
+        <>
+          <br></br>
+          <br></br>
+          {transactions.length === 10000 && (
+            <Alert status="warning">
+              <AlertIcon />
+              Table only shows 10000 newest transactions
+            </Alert>
+          )}
+          <TransactionTable transactions={transactions} />
+        </>
       )}
     </Box>
   );

@@ -28,7 +28,7 @@ const Search = ({ SearchTransactions }) => {
         marginTop={4}
         type="submit"
         onClick={async () => {
-          await SearchTransactions(address, from, 10000000000)
+          await SearchTransactions(address, from, 10000000000, 0, 10000)
         }}
       >
         Search
