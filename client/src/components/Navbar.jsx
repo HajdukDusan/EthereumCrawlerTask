@@ -1,12 +1,7 @@
 import { Button, Flex, Box, Text, useColorMode } from "@chakra-ui/react";
-import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import GetHistory from "../services/history";
-import TransactionTable from "./TransactionTable";
 
 const Navbar = () => {
-
-
 
   return (
     <Flex
@@ -44,7 +39,7 @@ const Navbar = () => {
             variant="ghost"
             p={[1, 4]}
           >
-            List Books
+            List
           </Button>
         </Link>
         <Link to="/add-new-book">
@@ -54,7 +49,7 @@ const Navbar = () => {
             variant="ghost"
             p={[1, 4]}
           >
-            Add Book
+            Add
           </Button>
         </Link>
       </Box>

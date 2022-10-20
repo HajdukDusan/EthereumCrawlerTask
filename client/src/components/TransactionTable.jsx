@@ -13,10 +13,10 @@ import {
   Thead,
   Tr,
 } from "@chakra-ui/react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import TransactionRow from "./TransactionRow";
 
-const TransactionTable = ({transactions}) => {
+const TransactionTable = ({ transactions }) => {
 
   return (
     <>
@@ -33,9 +33,10 @@ const TransactionTable = ({transactions}) => {
             </Tr>
           </Thead>
           <Tbody>
-            <TransactionRow />
-            <TransactionRow />
-            <TransactionRow />
+            {transactions &&
+            transactions.map((tx) => (
+                <TransactionRow transaction={tx} />
+            ))}
           </Tbody>
           <Tfoot>
             <Tr>
