@@ -16,4 +16,45 @@ const GetHistory = async (address, fromBlock, toBlock, pageIndex, pageSize) => {
     return body;
 };
 
-export default GetHistory;
+const GetAvailableERC20Value = async (address, contractAddress, date) => {
+
+    const response = await fetch(
+        '/api/erc20/available-amount?' +
+        'address=' + address +
+        '&contractAddress=' + contractAddress +
+        '&date=' + date
+    );
+
+    console.log(response)
+
+    const body = await response.json();
+
+    console.log(body)
+
+    if (response.status !== 200) {
+        throw Error(body.message)
+    }
+    return body;
+};
+
+const GetAvailableETHValue = async (address, date) => {
+
+    const response = await fetch(
+        '/api/eth/available-amount?' +
+        'address=' + address +
+        '&date=' + date
+    );
+
+    const body = await response.json();
+
+    if (response.status !== 200) {
+        throw Error(body.message)
+    }
+    return body;
+};
+
+export {
+    GetHistory,
+    GetAvailableERC20Value,
+    GetAvailableETHValue
+}

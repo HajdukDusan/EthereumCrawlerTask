@@ -2,6 +2,7 @@ import './App.css';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import TransactionHistory from './pages/TransactionHistory';
+import HistoricallyAvailableValue from './pages/HistoricallyAvailableValue';
 
 function App() {
 
@@ -10,8 +11,7 @@ function App() {
       <Navbar />
       <Routes>
         <Route path="/" element={<TransactionHistory />} />
-        <Route path="/add-new-book" />
-        <Route path="/update-book/:id" />
+        <Route path="/historical-value" element={<HistoricallyAvailableValue />} />
       </Routes>
     </BrowserRouter>
   );

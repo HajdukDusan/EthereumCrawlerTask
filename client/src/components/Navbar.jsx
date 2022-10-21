@@ -32,24 +32,14 @@ const Navbar = () => {
       </Box>
 
       <Box>
-        <Link to="/">
+        <Link to="/historical-value">
           <Button
             fontWeight={["medium", "medium", "medium"]}
             fontSize={["xs", "sm", "lg", "xl"]}
             variant="ghost"
             p={[1, 4]}
           >
-            List
-          </Button>
-        </Link>
-        <Link to="/add-new-book">
-          <Button
-            fontWeight={["medium", "medium", "medium"]}
-            fontSize={["xs", "sm", "lg", "xl"]}
-            variant="ghost"
-            p={[1, 4]}
-          >
-            Add
+            Historically Available Value
           </Button>
         </Link>
       </Box>
