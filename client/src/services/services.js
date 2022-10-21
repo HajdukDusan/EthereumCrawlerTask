@@ -25,11 +25,7 @@ const GetAvailableERC20Value = async (address, contractAddress, date) => {
         '&date=' + date
     );
 
-    console.log(response)
-
     const body = await response.json();
-
-    console.log(body)
 
     if (response.status !== 200) {
         throw Error(body.message)
