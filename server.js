@@ -47,7 +47,6 @@ app.get('/api/erc20/available-amount', async (req, res) => {
         req.query.contractAddress,
         req.query.date,
     ));
-
 });
 
 app.get('/api/eth/available-amount', async (req, res) => {
@@ -56,58 +55,120 @@ app.get('/api/eth/available-amount', async (req, res) => {
         req.query.address,
         req.query.date,
     ));
-
 });
 
-// only up to 10k txs
 async function GetETHAvailableAmount(address, date) {
 
-    const timestamp = Date.parse(date) / 1000;
-    let result = new Decimal('0')
+    console.log("Calculating ETH available amount..")
 
+    const timestamp = Date.parse(date) / 1000;
     const latestBlock = await getLatestBlock()
+    let result = new Decimal('0')
 
     // we need to wait 5 sec between api calls to avoid max rate limit error
     await delay(5000)
-
-    const externalTx = await GetExternalTransactions(address, 0, latestBlock, 0, 10000, "asc")
-
-    await delay(5000)
-
-    const internalTx = await GetInternalTransactions(address, 0, latestBlock, 0, 10000, "asc")
-    if (shouldBreak(externalTx) && shouldBreak(internalTx)) return "0";
-
-    console.log("external tx num: ", externalTx.length)
-    console.log("internal tx num: ", internalTx.length)
-
-    await delay(5000)
     const isAddressContract = await checkIfAddressIsContract(address);
 
-    result = result.plus(await accumulateValuesETH(externalTx, address, timestamp, isAddressContract));
-    result = result.plus(await accumulateValuesETH(internalTx, address, timestamp, isAddressContract));
+    // create wrappers for AccumulateAllTransactions()
+    async function fetchExternalTxsWrapper(lastProcessedBlock) {
+        const txs = await GetExternalTransactions(address, lastProcessedBlock, latestBlock, 0, 10000, "asc")
+        return [txs, "ETH", 18]
 
+    }
+    async function fetchInternalTxsWrapper(lastProcessedBlock) {
+        const txs = await GetInternalTransactions(address, lastProcessedBlock, latestBlock, 0, 10000, "asc");
+        return [txs, "ETH", 18]
+    }
+    async function accumulateValuesETHWrapper(transactions) {
+        return await accumulateValuesETH(transactions, address, timestamp, isAddressContract);
+    }
 
-    return result.dividedBy(new Decimal(10).toPower(18))
+    // accumulate values of all external and internal txs
+    console.log("Fetching external txs..")
+    result = result.plus((await AccumulateAllTransactions(fetchExternalTxsWrapper, accumulateValuesETHWrapper, latestBlock))[0])
+    console.log("Fetching internal txs..")
+    result = result.plus((await AccumulateAllTransactions(fetchInternalTxsWrapper, accumulateValuesETHWrapper, latestBlock))[0])
+
+    return result.dividedBy(new Decimal(10).toPower(18)) + " ETH";
 }
 
-// only up to 10k txs
 async function GetERC20AvailableAmount(address, contractAddress, date) {
 
-    const timestamp = Date.parse(date) / 1000;
+    console.log("Calculating ERC20 available amount..")
 
+    const timestamp = Date.parse(date) / 1000;
     const latestBlock = await getLatestBlock()
+    let result = new Decimal('0')
 
     await delay(5000)
 
-    const transactions = await GetERC20Transactions(address, contractAddress, 0, latestBlock, 0, 10000, "asc")
-    if (shouldBreak(transactions)) return "0";
+    // create wrappers for AccumulateAllTransactions()
+    async function fetchERC20TxWrapper(lastProcessedBlock) {
+        return await GetERC20Transactions(address, contractAddress, lastProcessedBlock, latestBlock, 0, 10000, "asc");
+    }
+    async function accumulateValuesERC20Wrapper(transactions) {
+        return await accumulateValuesERC20(transactions, address, timestamp);
+    }
 
-    const decimals = transactions[0].tokenDecimal;
-    console.log("tx num: ", transactions.length)
+    const [amount, symbol, decimals] = await AccumulateAllTransactions(fetchERC20TxWrapper, accumulateValuesERC20Wrapper, latestBlock)
 
-    let result = await accumulateValuesERC20(transactions, address, timestamp);
+    result = result.plus(amount)
 
-    return result.dividedBy(new Decimal(10).toPower(decimals))
+    return result.dividedBy(new Decimal(10).toPower(decimals)) + " " + symbol;
+}
+
+async function AccumulateAllTransactions(fetchFunction, accumulateFunction, latestBlock) {
+
+    let result = new Decimal('0')
+    let lastBlockTxs = [];
+    let lastProcessedBlock = 0;
+
+    let decimalPoints = 18
+    let symbol = "";
+
+    while (true) {
+
+        await delay(5000)
+        let [transactions, tokenSymbol, tokenDecimals] = await fetchFunction(address, lastProcessedBlock, latestBlock, 0, 10000, "asc")
+        decimalPoints = tokenDecimals;
+        symbol = tokenSymbol;
+
+        if (shouldBreak(transactions)) break;
+
+        const txsOriginalLenght = transactions.length;
+
+        // filter processed txs from the last iteration
+        transactions = transactions.filter(tx => !lastBlockTxs.includes(tx.hash));
+
+        console.log("fetched:", txsOriginalLenght, "txs -> filtered", txsOriginalLenght - transactions.length)
+
+        lastBlockTxs = getLastBlockTxs(transactions);
+
+        // update last fetched block number
+        lastProcessedBlock = transactions[transactions.length - 1].blockNumber;
+
+        result = result.plus(await accumulateFunction(transactions, address, timestamp, isAddressContract));
+
+        // last iteration if the fetch did not hit 10k
+        if (txsOriginalLenght != 10000) break;
+    }
+
+    return [result, symbol, decimalPoints];
+}
+
+function getLastBlockTxs(transactions) {
+    const result = [];
+    let max = -1;
+
+    for (let i = transactions.length - 1; i >= 0; i--) {
+        if (max <= transactions[i].blockNumber) {
+            max = transactions[i].blockNumber;
+            result.push(transactions[i].hash);
+        }
+        else break;
+    }
+
+    return result;
 }
 
 function shouldBreak(transactions) {
@@ -191,7 +252,13 @@ async function GetERC20Transactions(address, contractAddress, fromBlock, toBlock
         "&sort=" + order +
         "&apikey=" + process.env.ETHERSCAN_API_KEY
 
-    return (await fetchData(url)).result;
+    const txs = (await fetchData(url)).result;
+
+    if (!shouldBreak(txs)) {
+        return [txs, txs[0].tokenSymbol, txs[0].tokenDecimal]
+    }
+
+    return [[], "", 18];
 }
 
 async function GetTransactions(address, fromBlock, toBlock, pageIndex, pageSize, order) {
