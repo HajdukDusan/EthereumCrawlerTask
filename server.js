@@ -13,11 +13,11 @@ function delay(time) {
     return new Promise(resolve => setTimeout(resolve, time));
 }
 
-// const provider = new ethers.getDefaultProvider();
-
 app.listen(port, () => console.log(`Listening on port ${port}`));
 
 
+
+// ENDPOINTS
 app.get('/api/search', async (req, res) => {
 
     const transactions = await GetExternalTransactions(
@@ -29,7 +29,10 @@ app.get('/api/search', async (req, res) => {
         "desc"
     );
 
-    if (shouldBreak(transactions)) res.send([]);
+    if (shouldBreak(transactions)) {
+        res.send([]);
+        return;
+    }
     console.log("external tx num: ", transactions.length)
 
     try {
@@ -39,23 +42,25 @@ app.get('/api/search', async (req, res) => {
         console.log(error)
     }
 });
-
 app.get('/api/erc20/available-amount', async (req, res) => {
 
-    res.send(await GetERC20AvailableAmount(
+    const [value, token] = await GetERC20AvailableAmount(
         req.query.address,
         req.query.contractAddress,
         req.query.date,
-    ));
+    )
+    res.send({ amount: value, symbol: token });
 });
-
 app.get('/api/eth/available-amount', async (req, res) => {
 
-    res.send(await GetETHAvailableAmount(
+    const value = await GetETHAvailableAmount(
         req.query.address,
         req.query.date,
-    ));
+    )
+    res.send({ amount: value, symbol: "ETH" });
 });
+
+
 
 async function GetETHAvailableAmount(address, date) {
 
@@ -89,7 +94,7 @@ async function GetETHAvailableAmount(address, date) {
     console.log("Fetching internal txs..")
     result = result.plus((await AccumulateAllTransactions(fetchInternalTxsWrapper, accumulateValuesETHWrapper, latestBlock))[0])
 
-    return result.dividedBy(new Decimal(10).toPower(18)) + " ETH";
+    return result.dividedBy(new Decimal(10).toPower(18));
 }
 
 async function GetERC20AvailableAmount(address, contractAddress, date) {
@@ -114,7 +119,7 @@ async function GetERC20AvailableAmount(address, contractAddress, date) {
 
     result = result.plus(amount)
 
-    return result.dividedBy(new Decimal(10).toPower(decimals)) + " " + symbol;
+    return [result.dividedBy(new Decimal(10).toPower(decimals)), symbol]
 }
 
 async function AccumulateAllTransactions(fetchFunction, accumulateFunction, latestBlock) {
@@ -129,7 +134,7 @@ async function AccumulateAllTransactions(fetchFunction, accumulateFunction, late
     while (true) {
 
         await delay(5000)
-        let [transactions, tokenSymbol, tokenDecimals] = await fetchFunction(address, lastProcessedBlock, latestBlock, 0, 10000, "asc")
+        let [transactions, tokenSymbol, tokenDecimals] = await fetchFunction(lastProcessedBlock)
         decimalPoints = tokenDecimals;
         symbol = tokenSymbol;
 
@@ -147,7 +152,7 @@ async function AccumulateAllTransactions(fetchFunction, accumulateFunction, late
         // update last fetched block number
         lastProcessedBlock = transactions[transactions.length - 1].blockNumber;
 
-        result = result.plus(await accumulateFunction(transactions, address, timestamp, isAddressContract));
+        result = result.plus(await accumulateFunction(transactions));
 
         // last iteration if the fetch did not hit 10k
         if (txsOriginalLenght != 10000) break;
@@ -213,7 +218,9 @@ async function accumulateValuesETH(transactions, address, timestamp, isAddressCo
     return result;
 }
 
-
+// doesnt add up stacked ether (stETH) correctly, dont know why, example:
+// erc20 0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84
+// addr  0xdc24316b9ae028f1497c275eb9192a3ea0f67022
 function accumulateValuesERC20(transactions, address, timestamp) {
     address = address.toLowerCase()
 
@@ -223,12 +230,11 @@ function accumulateValuesERC20(transactions, address, timestamp) {
 
         if (timestamp < tx.timeStamp) return false;
 
-        if (tx.to === tx.from === address) return true;
-
         if (tx.to === address) {
             result = result.plus(tx.value)
         }
-        else if (tx.from === address) {
+        
+        if (tx.from === address) {
             result = result.minus(tx.value)
         }
 
@@ -238,6 +244,8 @@ function accumulateValuesERC20(transactions, address, timestamp) {
     return result;
 }
 
+
+// ETHERSCAN API FUNCTIONS
 async function GetERC20Transactions(address, contractAddress, fromBlock, toBlock, pageIndex, pageSize, order) {
 
     const url = "https://api.etherscan.io/api?" +
@@ -259,22 +267,6 @@ async function GetERC20Transactions(address, contractAddress, fromBlock, toBlock
     }
 
     return [[], "", 18];
-}
-
-async function GetTransactions(address, fromBlock, toBlock, pageIndex, pageSize, order) {
-
-    const url = "https://api.etherscan.io/api?" +
-        "module=account" +
-        "&action=txlist" +
-        "&address=" + address +
-        "&startblock=" + fromBlock +
-        "&endblock=" + toBlock +
-        "&page=" + pageIndex +
-        "&offset=" + pageSize +
-        "&sort=" + order +
-        "&apikey=" + process.env.ETHERSCAN_API_KEY
-
-    return (await fetchData(url)).result;
 }
 
 async function GetExternalTransactions(address, fromBlock, toBlock, pageIndex, pageSize, order) {

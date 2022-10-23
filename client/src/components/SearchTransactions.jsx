@@ -10,9 +10,9 @@ import { useState } from "react";
 
 const SearchTransactions = ({ search }) => {
   const [address, setAddress] = useState(
-    "0xaa7a9ca87d3694b5755f213b5d04094b8d0f0a6f"
+    ""
   );
-  const [from, setFrom] = useState(9000000);
+  const [from, setFrom] = useState(0);
   const [to, setTo] = useState(10000000000);
 
   return (

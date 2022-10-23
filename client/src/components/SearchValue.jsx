@@ -13,10 +13,10 @@ import { useEffect, useState } from "react";
 
 const SearchValue = ({ searchETH, searchERC20 }) => {
   const [address, setAddress] = useState(
-    "0x3C25C2F2C920A39030d1d6288F7c0846Cd91E0b7"
+    ""
   );
   const [contractAddress, setContractAddress] = useState(
-    "0xaA7a9CA87d3694B5755f213B5D04094b8d0F0A6F"
+    ""
   );
   const [value, setValue] = useState("ETH");
 

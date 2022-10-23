@@ -11,7 +11,7 @@ import {
   StatNumber,
   Text,
 } from "@chakra-ui/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SearchValue from "../components/SearchValue";
 import {
   GetAvailableERC20Value,
@@ -38,6 +38,10 @@ const HistoricallyAvailableValue = () => {
     setLoading(false);
   };
 
+  useEffect(() => {
+    console.log(value);
+  }, [value]);
+
   return (
     <Box maxW="2xl" mx={"auto"} pt={1} px={{ base: 2, sm: 12, md: 17 }}>
       <SearchValue searchETH={searchETHValue} searchERC20={searchERC20Value} />
@@ -63,7 +67,9 @@ const HistoricallyAvailableValue = () => {
               </Center>
 
               <Center>
-                <Text fontSize="6xl">{value}</Text>
+                <Text fontSize="6xl">
+                  {value.amount} {value.symbol}
+                </Text>
               </Center>
             </>
           )}
