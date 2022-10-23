@@ -1,5 +1,7 @@
 # Ethereum Crawler Task
 
+
+## Disclaimer
 Program needs to wait 5 seconds between Etherscan API calls to avoid "max rate limit" error, so processing a large number of txs can take some time before returning a response to the client.
 
     Calculating ERC20 available amount..
