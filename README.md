@@ -30,7 +30,8 @@ Now run the backend with the next command:
 
     npm start
 
-Now open a new terminal, locate to the client folder and run the client app:
+Now open a new terminal, locate to the client folder, install the npm packages and run the client app:
 
     cd .\client\
+    npm install
     npm start
