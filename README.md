@@ -1,8 +1,17 @@
-# Ethereum Crawler Task
+# Ethereum Crawler
 
+Crawler for ethereum transactions. Uses the Etherscan API for fetching external and internal transaction data.
+
+Features:
+- Fetch unlimited number of external and internal transaction data.
+- Get historical balance of a wallet address (this is a Etherscan PRO feature, but here it is free :) ).
+- Get historical balance of ERC20 tokens for a wallet address (also a Etherscan PRO feature :) ).
 
 ## Disclaimer
-Program needs to wait 5 seconds between Etherscan API calls to avoid "max rate limit" error, so processing a large number of txs can take some time before returning a response to the client.
+Program needs to wait 5 seconds between Etherscan API calls to avoid "max rate limit" error because we use a free Etherscan plan, so processing a large number of txs can take some time before returning a response to the client.
+
+
+Example:
 
     Calculating ERC20 available amount..
     fetched: 10000 txs -> filtered 0
